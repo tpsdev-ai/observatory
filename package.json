@@ -1,0 +1,17 @@
+{
+  "name": "tps-observatory",
+  "version": "0.1.0",
+  "description": "TPS Observatory — multi-Flair aggregation dashboard on Harper Fabric",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "harperdb": "*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}

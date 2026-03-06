@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPS Observatory</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #141720;
+    --bg3: #1c2030;
+    --border: #2a2f42;
+    --text: #e0e4f0;
+    --text2: #7c869e;
+    --accent: #5b8dee;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --font: 'SF Mono', 'Fira Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; min-height: 100vh; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.05em; color: var(--accent); }
+  header .subtitle { color: var(--text2); font-size: 11px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  main { padding: 16px; display: grid; gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .card-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .card-header h2 { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); }
+  .card-header .count { font-size: 11px; color: var(--accent); }
+  .card-body { padding: 10px 14px; }
+
+  /* Office grid */
+  .office-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .office-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: default; }
+  .office-card.selected { border-color: var(--accent); }
+  .office-name { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+  .office-meta { font-size: 10px; color: var(--text2); }
+  .office-agents { font-size: 10px; color: var(--accent); margin-top: 4px; }
+
+  /* Agent roster */
+  .agent-list { display: grid; gap: 6px; }
+  .agent-row { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center; }
+  .agent-status { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .agent-status.online { background: var(--green); }
+  .agent-status.idle, .agent-status.unknown { background: var(--yellow); }
+  .agent-status.offline { background: var(--red); }
+  .agent-name { font-weight: 600; font-size: 12px; }
+  .agent-detail { font-size: 10px; color: var(--text2); }
+  .agent-role { font-size: 10px; color: var(--purple); }
+  .agent-office { font-size: 10px; color: var(--text2); }
+
+  /* Event feed */
+  .event-list { display: grid; gap: 4px; max-height: 340px; overflow-y: auto; }
+  .event-row { background: var(--bg3); border-left: 3px solid var(--border); border-radius: 0 4px 4px 0; padding: 6px 10px; display: grid; gap: 2px; }
+  .event-row.task { border-color: var(--accent); }
+  .event-row.pr { border-color: var(--purple); }
+  .event-row.blocker { border-color: var(--red); }
+  .event-row.heartbeat { border-color: var(--yellow); opacity: 0.6; }
+  .event-header { display: flex; gap: 8px; align-items: center; }
+  .event-kind { font-size: 10px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+  .event-author { font-size: 10px; color: var(--text2); }
+  .event-office { font-size: 10px; color: var(--purple); }
+  .event-time { font-size: 10px; color: var(--text2); margin-left: auto; }
+  .event-summary { font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .empty { color: var(--text2); font-size: 11px; padding: 12px 0; text-align: center; }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filter-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 4px; padding: 3px 8px; font: inherit; font-size: 11px; cursor: pointer; }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+  .last-updated { font-size: 10px; color: var(--text2); padding: 8px 14px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <div class="dot" id="liveIndicator"></div>
+  <h1>⚒ TPS Observatory</h1>
+  <span class="subtitle" id="headerMeta">Connecting...</span>
+</header>
+<main>
+  <div class="card">
+    <div class="card-header"><h2>Offices</h2><span class="count" id="officeCount">—</span></div>
+    <div class="card-body"><div class="office-grid" id="officeGrid"><div class="empty">No offices registered</div></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><h2>Agents</h2><span class="count" id="agentCount">—</span></div>
+      <div class="card-body">
+        <div class="filter-bar" id="agentFilters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="online">Online</button>
+          <button class="filter-btn" data-filter="offline">Offline</button>
+        </div>
+        <div class="agent-list" id="agentList"><div class="empty">No agents</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Activity</h2><span class="count" id="eventCount">—</span></div>
+      <div class="card-body">
+        <div class="filter-bar" id="eventFilters">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="task">Tasks</button>
+          <button class="filter-btn" data-filter="pr">PRs</button>
+        </div>
+        <div class="event-list" id="eventList"><div class="empty">No events</div></div>
+      </div>
+      <div class="last-updated" id="lastUpdated">—</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const BASE = '';  // same origin when served from Harper Fabric
+
+let offices = [], agents = [], events = [];
+let agentFilter = 'all', eventFilter = 'all';
+
+async function fetchAll() {
+  try {
+    const [o, a, e] = await Promise.all([
+      fetch(`${BASE}/ObsOffice/`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${BASE}/ObsAgentSnapshot/`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${BASE}/ObsEventFeed/?sort=createdAt,desc&limit=100`).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]);
+    offices = Array.isArray(o) ? o : [];
+    agents = Array.isArray(a) ? a : [];
+    events = Array.isArray(e) ? e : [];
+    render();
+    document.getElementById('liveIndicator').style.background = 'var(--green)';
+    document.getElementById('headerMeta').textContent =
+      `${offices.length} office${offices.length !== 1 ? 's' : ''} · ${agents.length} agents · last sync ${new Date().toLocaleTimeString()}`;
+    document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+  } catch(e) {
+    document.getElementById('liveIndicator').style.background = 'var(--red)';
+    document.getElementById('headerMeta').textContent = 'Connection error';
+  }
+}
+
+function ago(isoStr) {
+  if (!isoStr) return '?';
+  const ms = Date.now() - new Date(isoStr).getTime();
+  if (ms < 60000) return `${Math.round(ms/1000)}s ago`;
+  if (ms < 3600000) return `${Math.round(ms/60000)}m ago`;
+  if (ms < 86400000) return `${Math.round(ms/3600000)}h ago`;
+  return `${Math.round(ms/86400000)}d ago`;
+}
+
+function statusColor(status) {
+  if (!status) return 'unknown';
+  if (status === 'online' || status === 'active') return 'online';
+  if (status === 'offline') return 'offline';
+  return 'idle';
+}
+
+function eventKindClass(kind) {
+  if (!kind) return '';
+  if (kind.startsWith('task')) return 'task';
+  if (kind.startsWith('pr')) return 'pr';
+  if (kind === 'blocker') return 'blocker';
+  if (kind.includes('heartbeat')) return 'heartbeat';
+  return '';
+}
+
+function render() {
+  // Offices
+  document.getElementById('officeCount').textContent = offices.length;
+  document.getElementById('officeGrid').innerHTML = offices.length
+    ? offices.map(o => `
+      <div class="office-card">
+        <div class="office-name">${esc(o.id)}</div>
+        <div class="office-meta">${esc(o.name || o.id)} · <span style="color:${o.status==='online'?'var(--green)':'var(--red)'}">${o.status||'?'}</span></div>
+        <div class="office-agents">${o.agentCount ?? 0} agents · ${ago(o.lastSeen)}</div>
+      </div>`).join('')
+    : '<div class="empty">No offices registered</div>';
+
+  // Agents
+  const filteredAgents = agentFilter === 'all' ? agents
+    : agents.filter(a => {
+        const s = statusColor(a.status);
+        return agentFilter === 'online' ? s === 'online' : s === 'offline';
+      });
+  document.getElementById('agentCount').textContent = filteredAgents.length;
+  document.getElementById('agentList').innerHTML = filteredAgents.length
+    ? filteredAgents.map(a => `
+      <div class="agent-row">
+        <div class="agent-status ${statusColor(a.status)}"></div>
+        <div>
+          <div class="agent-name">${esc(a.name || a.agentId)}</div>
+          <div class="agent-detail">${ago(a.lastActivity)}</div>
+        </div>
+        <div class="agent-role">${esc(a.role||'')}</div>
+        <div class="agent-office">${esc(a.officeId)}</div>
+      </div>`).join('')
+    : '<div class="empty">No agents</div>';
+
+  // Events
+  const filteredEvents = eventFilter === 'all' ? events
+    : events.filter(e => e.kind && e.kind.startsWith(eventFilter));
+  document.getElementById('eventCount').textContent = filteredEvents.length;
+  document.getElementById('eventList').innerHTML = filteredEvents.length
+    ? filteredEvents.slice(0,50).map(e => `
+      <div class="event-row ${eventKindClass(e.kind)}">
+        <div class="event-header">
+          <span class="event-kind">${esc(e.kind)}</span>
+          <span class="event-author">${esc(e.authorId)}</span>
+          <span class="event-office">${esc(e.officeId)}</span>
+          <span class="event-time">${ago(e.createdAt)}</span>
+        </div>
+        <div class="event-summary">${esc(e.summary)}</div>
+      </div>`).join('')
+    : '<div class="empty">No events</div>';
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Filters
+document.getElementById('agentFilters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-filter]');
+  if (!btn) return;
+  agentFilter = btn.dataset.filter;
+  document.querySelectorAll('#agentFilters .filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+  render();
+});
+document.getElementById('eventFilters').addEventListener('click', e => {
+  const btn = e.target.closest('[data-filter]');
+  if (!btn) return;
+  eventFilter = btn.dataset.filter;
+  document.querySelectorAll('#eventFilters .filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+  render();
+});
+
+// Poll every 5s
+fetchAll();
+setInterval(fetchAll, 5000);
+</script>
+</body>
+</html>

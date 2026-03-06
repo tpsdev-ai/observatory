@@ -1,0 +1,17 @@
+name: tps-observatory
+rest: true
+
+http:
+  port: 9927
+
+graphqlSchema:
+  files: schemas/*.graphql
+
+jsResource:
+  files: dist/resources/*.js
+
+authentication:
+  authorizeLocal: false   # Observatory is public-read; IngestEvents uses Ed25519
+
+static:
+  path: ui
