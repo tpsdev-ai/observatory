@@ -3,7 +3,7 @@
  *
  * POST /IngestEvents
  * Auth: TPS-Ed25519 signed by the office's private key (verified against
- *       ObsOffice.publicKey stored at registration time).
+ *       Office.publicKey stored at registration time).
  *
  * Body: {
  *   officeId: string;
@@ -14,9 +14,9 @@
  *
  * Actions:
  *   1. Verify Ed25519 signature against stored office public key
- *   2. Upsert ObsAgentSnapshot for each agent
- *   3. Insert ObsEventFeed for each new event (30-day TTL)
- *   4. Update ObsOffice.lastSeen + agentCount
+ *   2. Upsert Member for each agent
+ *   3. Insert Event for each new event (30-day TTL)
+ *   4. Update Office.lastSeen + agentCount
  *
  * Rate limit: 1 call / 10s per office (enforced by createdAt delta check)
  * Batch limit: 100 events per call
@@ -44,8 +44,11 @@ interface AgentStatus {
   agentId: string;
   name?: string;
   role?: string;
+  type?: string;
   status?: string;
+  activity?: string;
   model?: string;
+  currentTask?: string;
   lastSeen?: string;
 }
 
@@ -106,9 +109,9 @@ export class IngestEvents extends Resource {
     }
 
     // Look up the office
-    const office = await (tables as any).ObsOffice.get(officeId).catch(() => null);
+    const office = await (tables as any).Office.get(officeId).catch(() => null);
     if (!office) {
-      return new Response(JSON.stringify({ error: "office not registered — POST /ObsOffice first" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "office not registered — POST /Office first" }), { status: 403, headers: { "Content-Type": "application/json" } });
     }
 
     // Verify Ed25519 signature
@@ -136,14 +139,17 @@ export class IngestEvents extends Resource {
     for (const agent of agents) {
       if (!agent.agentId) continue;
       const snapshotId = `${officeId}:${agent.agentId}`;
-      await (tables as any).ObsAgentSnapshot.put({
+      await (tables as any).Member.put({
         id: snapshotId,
         officeId,
         agentId: agent.agentId,
         name: agent.name ?? agent.agentId,
         role: agent.role,
+        type: agent.type ?? "agent",
         status: agent.status ?? "unknown",
+        activity: agent.activity,
         model: agent.model,
+        currentTask: agent.currentTask,
         lastActivity: agent.lastSeen ?? now,
         lastHeartbeat: now,
         updatedAt: now,
@@ -155,9 +161,9 @@ export class IngestEvents extends Resource {
     for (const ev of events) {
       if (!ev.id || !ev.kind) continue;
       const feedId = `${officeId}:${ev.id}`;
-      const existing = await (tables as any).ObsEventFeed.get(feedId).catch(() => null);
+      const existing = await (tables as any).Event.get(feedId).catch(() => null);
       if (existing) continue;
-      await (tables as any).ObsEventFeed.put({
+      await (tables as any).Event.put({
         id: feedId,
         officeId,
         kind: ev.kind,
@@ -165,6 +171,7 @@ export class IngestEvents extends Resource {
         summary: ev.summary,
         refId: ev.refId,
         scope: ev.scope,
+        targetIds: ev.targetIds,
         createdAt: ev.createdAt,
         receivedAt: now,
         expiresAt,
@@ -173,7 +180,7 @@ export class IngestEvents extends Resource {
     }
 
     // Update office lastSeen + agentCount
-    await (tables as any).ObsOffice.put({
+    await (tables as any).Office.put({
       ...office,
       status: "online",
       lastSeen: now,
