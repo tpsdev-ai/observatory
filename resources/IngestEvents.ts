@@ -22,7 +22,7 @@
  * Batch limit: 100 events per call
  */
 
-import { Resource, tables } from "harperdb";
+import { Resource, databases } from "harperdb";
 import { createPublicKey, verify } from "node:crypto";
 
 const BATCH_LIMIT = 100;
@@ -91,9 +91,23 @@ function verifyEd25519Signature(
 }
 
 export class IngestEvents extends Resource {
+  // Bypass Harper's default POST role-gate (else it 401s "Must login" before
+  // post() runs). The REAL auth is the Ed25519 office-signature verified in
+  // post() below — same pattern as flair's Presence resource.
+  allowCreate() { return true; }
+
   async post(body: unknown, context?: unknown) {
-    const request = (this as any).request;
-    const authHeader: string | undefined = request?.headers?.get?.("authorization") ?? request?.headers?.authorization;
+    // Harper v5: headers live on getContext().request, NOT this.request (the
+    // latter is undefined — a known pitfall; flair's Presence does it this way).
+    const ctx = (this as any).getContext?.();
+    const request = ctx?.request ?? ctx ?? {};
+    // Fabric's gateway strips/consumes the Authorization header, so the office
+    // signature rides on a custom header it forwards. Fall back to Authorization
+    // for non-Fabric (local/direct) deployments.
+    const authHeader: string | undefined =
+      request?.headers?.get?.("x-tps-ed25519") ??
+      request?.headers?.get?.("authorization") ??
+      request?.headers?.authorization;
 
     // Parse and validate body
     let payload: IngestPayload;
@@ -109,7 +123,7 @@ export class IngestEvents extends Resource {
     }
 
     // Look up the office
-    const office = await (tables as any).Office.get(officeId).catch(() => null);
+    const office = await (databases as any).roster.Office.get(officeId).catch(() => null);
     if (!office) {
       return new Response(JSON.stringify({ error: "office not registered — POST /Office first" }), { status: 403, headers: { "Content-Type": "application/json" } });
     }
@@ -139,7 +153,7 @@ export class IngestEvents extends Resource {
     for (const agent of agents) {
       if (!agent.agentId) continue;
       const snapshotId = `${officeId}:${agent.agentId}`;
-      await (tables as any).Member.put({
+      await (databases as any).roster.Member.put({
         id: snapshotId,
         officeId,
         agentId: agent.agentId,
@@ -161,9 +175,9 @@ export class IngestEvents extends Resource {
     for (const ev of events) {
       if (!ev.id || !ev.kind) continue;
       const feedId = `${officeId}:${ev.id}`;
-      const existing = await (tables as any).Event.get(feedId).catch(() => null);
+      const existing = await (databases as any).roster.Event.get(feedId).catch(() => null);
       if (existing) continue;
-      await (tables as any).Event.put({
+      await (databases as any).roster.Event.put({
         id: feedId,
         officeId,
         kind: ev.kind,
@@ -180,7 +194,7 @@ export class IngestEvents extends Resource {
     }
 
     // Update office lastSeen + agentCount
-    await (tables as any).Office.put({
+    await (databases as any).roster.Office.put({
       ...office,
       status: "online",
       lastSeen: now,
