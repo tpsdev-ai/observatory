@@ -63,11 +63,12 @@ describe("IngestEvents auth logic", () => {
     });
   });
 
-  test("schema includes all Observatory tables", async () => {
+  test("schema includes all roster tables", async () => {
     const schema = await Bun.file("schemas/schema.graphql").text();
-    expect(schema).toContain("ObsOffice");
-    expect(schema).toContain("ObsAgentSnapshot");
-    expect(schema).toContain("ObsEventFeed");
+    expect(schema).toContain("type Office");
+    expect(schema).toContain("type Member");
+    expect(schema).toContain("type Event");
+    expect(schema).toContain('database: "roster"');
     expect(schema).toContain("publicKey");
     expect(schema).toContain("expiresAt");
   });

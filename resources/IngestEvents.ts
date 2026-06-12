@@ -28,6 +28,16 @@ import { createPublicKey, verify } from "node:crypto";
 const BATCH_LIMIT = 100;
 const RATE_LIMIT_MS = 10_000;
 const EVENT_TTL_DAYS = 30;
+const NONCE_TTL_MS = 5 * 60 * 1000;
+
+// Replay protection (Sherlock review finding): a signature is valid for 5 min,
+// so without nonce tracking a captured signature could be replayed within the
+// window. Remember recently-seen nonces keyed "officeId:nonce", pruned by TTL.
+const nonceSeen = new Map<string, number>();
+function pruneNonces(): void {
+  const now = Date.now();
+  for (const [k, t] of nonceSeen) if (now - t > NONCE_TTL_MS) nonceSeen.delete(k);
+}
 
 interface OrgEventRecord {
   id: string;
@@ -131,6 +141,17 @@ export class IngestEvents extends Resource {
     // Verify Ed25519 signature
     if (!authHeader || !verifyEd25519Signature(String(office.publicKey), authHeader, officeId)) {
       return new Response(JSON.stringify({ error: "invalid signature" }), { status: 401, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Replay protection: reject reused nonces within the signature window.
+    const nonceMatch = authHeader.match(/^TPS-Ed25519\s+[^:]+:[^:]+:([^:]+):/);
+    const nonceKey = nonceMatch ? `${officeId}:${nonceMatch[1]}` : null;
+    if (nonceKey) {
+      pruneNonces();
+      if (nonceSeen.has(nonceKey)) {
+        return new Response(JSON.stringify({ error: "nonce replay detected" }), { status: 401, headers: { "Content-Type": "application/json" } });
+      }
+      nonceSeen.set(nonceKey, Date.now());
     }
 
     // Rate limit check
