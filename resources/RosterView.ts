@@ -13,37 +13,47 @@ import { Resource, databases } from "harperdb";
  */
 
 const OFFICE_PUBLIC = [
-  "id", "name", "status", "lastSeen", "agentCount",
-  "staleThresholdSeconds", "createdAt", "updatedAt",
+	"id",
+	"name",
+	"status",
+	"lastSeen",
+	"agentCount",
+	"staleThresholdSeconds",
+	"createdAt",
+	"updatedAt",
 ];
 
 function pick(obj: any, keys: string[]): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const k of keys) if (obj?.[k] !== undefined) out[k] = obj[k];
-  return out;
+	const out: Record<string, unknown> = {};
+	for (const k of keys) if (obj?.[k] !== undefined) out[k] = obj[k];
+	return out;
 }
 
 async function scan(table: any): Promise<any[]> {
-  const out: any[] = [];
-  try {
-    for await (const row of table.search()) out.push(row);
-  } catch { /* empty / not-yet-populated table */ }
-  return out;
+	const out: any[] = [];
+	try {
+		for await (const row of table.search()) out.push(row);
+	} catch {
+		/* empty / not-yet-populated table */
+	}
+	return out;
 }
 
 export class RosterView extends Resource {
-  allowRead() { return true; }
+	allowRead() {
+		return true;
+	}
 
-  async get() {
-    const [officesRaw, members, eventsRaw] = await Promise.all([
-      scan((databases as any).roster.Office),
-      scan((databases as any).roster.Member),
-      scan((databases as any).roster.Event),
-    ]);
-    const offices = officesRaw.map((o) => pick(o, OFFICE_PUBLIC));
-    const events = eventsRaw
-      .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
-      .slice(-50);
-    return { offices, members, events };
-  }
+	async get() {
+		const [officesRaw, members, eventsRaw] = await Promise.all([
+			scan((databases as any).roster.Office),
+			scan((databases as any).roster.Member),
+			scan((databases as any).roster.Event),
+		]);
+		const offices = officesRaw.map((o) => pick(o, OFFICE_PUBLIC));
+		const events = eventsRaw
+			.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
+			.slice(-50);
+		return { offices, members, events };
+	}
 }

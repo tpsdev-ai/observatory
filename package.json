@@ -1,19 +1,19 @@
 {
-  "name": "tps-observatory",
-  "version": "0.1.0",
-  "description": "TPS Observatory \u2014 multi-Flair aggregation dashboard on Harper Fabric",
-  "type": "module",
-  "scripts": {
-    "build": "tsc --build",
-    "test": "bun test",
-    "lint": "biome lint ./resources ./schemas"
-  },
-  "dependencies": {
-    "harperdb": "*"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.0.0",
-    "@biomejs/biome": "^1.0.0"
-  }
+	"name": "tps-observatory",
+	"version": "0.1.0",
+	"description": "TPS Observatory \u2014 multi-Flair aggregation dashboard on Harper Fabric",
+	"type": "module",
+	"scripts": {
+		"build": "tsc --build",
+		"test": "bun test",
+		"lint": "biome lint ./resources ./schemas"
+	},
+	"dependencies": {
+		"harperdb": "*"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"typescript": "^5.0.0",
+		"@biomejs/biome": "^1.0.0"
+	}
 }
