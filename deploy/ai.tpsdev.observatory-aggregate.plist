@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ai.tpsdev.observatory-aggregate</string>
+
+  <!-- Live rockit-office aggregator. Derives real agent presence + bd tasks +
+       PR events and signs/POSTs them to the deployed Observatory /IngestEvents.
+       60s cadence (comfortably above the endpoint's 10s rate limit). -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>/Users/squeued/ops/tps-observatory/scripts/aggregate-rockit.mjs</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>60</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/squeued/.tps/logs/observatory-aggregate-stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/squeued/.tps/logs/observatory-aggregate-stderr.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/squeued</string>
+    <key>PATH</key>
+    <string>/Users/squeued/.local/bin:/Users/squeued/.tps/bin:/Users/squeued/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>
