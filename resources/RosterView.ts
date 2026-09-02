@@ -4,7 +4,7 @@ import { Resource, databases } from "harperdb";
  * GET /RosterView — public-safe snapshot of the roster directory for the
  * Office Space (observatory) renderer.
  *
- * Auth: PUBLIC (allowRead). This is the single public read surface over roster.
+ * Auth: GATED (allowRead requires an authenticated user, 2026-09-02). Field-allowlisted read surface over roster.
  * Security boundary (Sherlock): every field returned here is public-safe.
  *   - Office.publicKey is the office Ed25519 key — EXCLUDED via OFFICE_PUBLIC.
  *   - Member/Event carry no secrets (currentTask/summary are agent-authored,
@@ -40,8 +40,11 @@ async function scan(table: any): Promise<any[]> {
 }
 
 export class RosterView extends Resource {
-	allowRead() {
-		return true;
+	// GATED 2026-09-02 (Nathan: "gate it now", ops-ku7f): authenticated Harper users
+	// only. The roster directory exposes internal topology (host names, agent ids,
+	// event titles); public read was the June demo posture. Anonymous -> 401.
+	allowRead(user: unknown) {
+		return Boolean(user);
 	}
 
 	async get() {
