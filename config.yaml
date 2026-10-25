@@ -1,8 +1,9 @@
 name: tps-observatory
 rest: true
 
-http:
-  port: 9927
+# Co-hosted as a component in the existing Harper instance — it shares the
+# instance's REST side (no own http.port) and is managed via the ops side.
+# Per-resource access (Obs* public-read at CP2) is set on the resources, not here.
 
 graphqlSchema:
   files: schemas/*.graphql
@@ -10,8 +11,5 @@ graphqlSchema:
 jsResource:
   files: dist/resources/*.js
 
-authentication:
-  authorizeLocal: false   # Observatory is public-read; IngestEvents uses Ed25519
-
-static:
-  path: ui
+# static UI (the renderer) is added at CP2 — omitted at CP1 so the substrate
+# (Obs* schema + IngestEvents) loads without the static-serving config.
