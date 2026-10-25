@@ -1,0 +1,104 @@
+{
+	"note": "The seven entries below mirror the reviewed exceptions in the sibling flair repository for the same harper 5.3.1 pin; class, reason, expiry and removeWhen are unchanged, and sources is narrowed to bun because this repository has no consumer-install observation.",
+	"policy": {
+		"maxLifetimeDaysBySeverity": {
+			"critical": 30,
+			"high": 60,
+			"moderate": 180,
+			"low": 180
+		}
+	},
+	"entries": [
+		{
+			"ghsa": "GHSA-83w8-p2f5-377r",
+			"package": "@fastify/static",
+			"severity": "high",
+			"class": "vendor-pinned",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"introducedBy": "harper -> @fastify/static",
+			"reason": "Renewed 2026-10-22 after re-reading against harper 5.3.1, the version flair pins (package.json:69) (first added 2026-07-27; renewed 2026-09-25 and 2026-10-07). Resolved copies: one in bun.lock (@fastify/static 9.3.0, pulled only by harper ^9.1.3) and harper 5.3.1's npm-shrinkwrap pin 9.3.0 (node_modules/harper/node_modules/@fastify/static in an npm install of flair). The fix is 10.1.1 (10.1.2 for GHSA-8pvw-jcv7-9cmj; npm's latest is 10.1.7), and the 9.x line ends at 9.3.0 with no backport. Every harper release inspected still declares ^9.1.3 (5.3.1; 5.3.3, latest; 5.3.2; 5.2.15, latest-5.2; 5.1.29, latest-5.1; 5.3.0-beta.4, next), so the fix is a major bump inside harper's HTTP layer that a root override would force on the server harper itself mounts. Where it is used: harper 5.3.1 imports it only in dist/server/operationsServer.js:53 and registers it once (:208), on the operations server, with a fixed root of harper's own Studio assets (studio/web); flair's localStudio enabled: false (src/commands/init.ts:1039,1194) changes only which page the / handler serves (:209-215), not that registration. That file adds no request hook of its own; authentication on the operations server is per-route preValidation (GET /api/openapi/rest :217, POST / :220, and the operations MCP route at :194-203, registered only when mcp.operations is configured, which flair does not set), so no guard is tied to the paths the plugin serves. harper's application-port static handler uses send, not this plugin (dist/server/static.js:12), and flair's component config declares no static handler (config.yaml). flair does not import @fastify/static. The default flair install binds the operations server to 127.0.0.1 (src/cli.ts:578, resolved at :1882-1891) plus a domain socket (src/commands/init.ts:1026,1037) that is owner-only unless FLAIR_SOCKET_GROUP opts a group in (posture at src/cli.ts:2129-2147,2165-2173); an operator who widens the bind with --ops-bind or FLAIR_OPS_BIND makes the plugin reachable beyond loopback. Short leash (11 days), expiry aligned with the other harper-pinned high entries, pending the upstream move.",
+			"added": "2026-10-22",
+			"expires": "2026-11-02",
+			"removeWhen": "flair moves to a harper release whose installed tree resolves @fastify/static >=10.1.1 (>=10.1.2 also retires GHSA-8pvw-jcv7-9cmj), whether pinned by its npm-shrinkwrap or shipped in its bundle; or flair stops depending on harper. As of 2026-10-22 no published harper release does: 5.3.3, 5.3.2, 5.3.1, 5.2.15, 5.1.29 and 5.3.0-beta.4 all declare ^9.1.3, and the 9.x line ends at 9.3.0."
+		},
+		{
+			"ghsa": "GHSA-8pvw-jcv7-9cmj",
+			"package": "@fastify/static",
+			"severity": "moderate",
+			"class": "vendor-pinned",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"introducedBy": "harper -> @fastify/static",
+			"reason": "Renewed 2026-10-22 after re-reading against harper 5.3.1, the version flair pins (package.json:69) (first added 2026-07-27; re-checked 2026-10-07). Same vendored edge, same resolved copies (@fastify/static 9.3.0 in bun.lock and in harper 5.3.1's npm-shrinkwrap) and same exposure as GHSA-83w8-p2f5-377r: harper registers the plugin only on its operations server, for its own Studio assets (node_modules/harper/dist/server/operationsServer.js:208), with no authorization tied to the paths it serves; flair does not import it. Fixed in 10.1.2 (npm's latest is 10.1.7); none of the inspected harper releases (5.3.1, 5.3.3, 5.3.2, 5.2.15, 5.1.29, 5.3.0-beta.4) moves off ^9.1.3. Expiry aligned with GHSA-83w8-p2f5-377r so the shared fix is re-decided once.",
+			"added": "2026-10-22",
+			"expires": "2026-11-02",
+			"removeWhen": "flair moves to a harper release whose installed tree resolves @fastify/static >=10.1.2 (the same move that retires GHSA-83w8-p2f5-377r), whether pinned by its npm-shrinkwrap or shipped in its bundle; or flair stops depending on harper. As of 2026-10-22 no published harper release does."
+		},
+		{
+			"ghsa": "GHSA-rv73-9c8w-jp4c",
+			"package": "validate.js",
+			"severity": "moderate",
+			"class": "no-patch-published",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"introducedBy": "harper -> validate.js",
+			"reason": "Renewed 2026-10-22 after re-reading against harper 5.3.1, the version flair pins (package.json:69) (first added 2026-07-27). No fixed release exists: npm's latest validate.js is 0.13.1 (released 2019), inside the affected range (<=0.13.1). Resolved copies: one in bun.lock (validate.js 0.13.1, pulled only by harper's exact 0.13.1) and harper 5.3.1's npm-shrinkwrap pin 0.13.1 (node_modules/harper/node_modules/validate.js in an npm install of flair); harper 5.3.2 and 5.3.3 declare the same exact 0.13.1. flair's own code does not import validate.js.",
+			"added": "2026-10-22",
+			"expires": "2026-11-05",
+			"removeWhen": "validate.js publishes a fixed release AND harper picks it up, or flair stops depending on harper. The gate flags the first half automatically."
+		},
+		{
+			"ghsa": "GHSA-528h-pc64-c93x",
+			"package": "stream-json",
+			"severity": "moderate",
+			"class": "vendor-pinned",
+			"introducedBy": "harper -> stream-json",
+			"reason": "O(depth-squared) event-loop DoS in stream-json's pick/ignore/filter/replace filters on crafted nested JSON. stream-json@1.9.1 is a transitive pin of harper (@harperfast/harper; harper 5.2.x); it cannot be overridden from this repo (harper ships an npm-shrinkwrap and the override is bun-only, flair#1498/#1510). flair does not import stream-json directly - reachability is only via harper's internal streaming parser, not flair code.",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"added": "2026-09-04",
+			"expires": "2026-12-03",
+			"removeWhen": "harper ships a build resolving stream-json > 3.4.0 (the patched line), or flair stops depending on harper."
+		},
+		{
+			"ghsa": "GHSA-mjw6-4jj6-33hc",
+			"package": "stream-json",
+			"severity": "moderate",
+			"class": "vendor-pinned",
+			"introducedBy": "harper -> stream-json",
+			"reason": "Prototype pollution in stream-json's Assembler (fixed in 3.6.0). Harper 5.2.8 pins stream-json 1.9.1 in its npm-shrinkwrap, which blocks a root override for npm installs (flair#1498/#1510). A Bun root override to stream-json 3.x is deferred pending compatibility testing. flair does not import stream-json. Harper 5.2.8 imports StreamArray and Batch in dist/dataLayer/bulkLoad.js; its import_from_s3 operation selects JSON from the S3 object's extension. StreamArray builds each element through the Assembler, so that path is in scope; Harper checks target-table insert permission for an insert import, update permission for update, and both for upsert (dist/utility/operation_authorization.js).",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"added": "2026-10-06",
+			"expires": "2026-12-03",
+			"removeWhen": "harper ships a build resolving stream-json >= 3.6.0, or flair stops depending on harper."
+		},
+		{
+			"ghsa": "GHSA-hqr4-qq8f-hg3x",
+			"package": "stream-json",
+			"severity": "moderate",
+			"class": "vendor-pinned",
+			"introducedBy": "harper -> stream-json",
+			"reason": "Quadratic re-scan in stream-json's JSONC parser and verifier (fixed after 3.5.0). The installed stream-json 1.9.1 package ships no JSONC parser. Harper 5.2.8 pins stream-json 1.9.1 in its npm-shrinkwrap, which blocks a root override for npm installs (flair#1498/#1510). A Bun root override to stream-json 3.x is deferred pending compatibility testing. flair does not import stream-json. Harper 5.2.8 imports StreamArray and Batch in dist/dataLayer/bulkLoad.js; its import_from_s3 operation selects JSON from the S3 object's extension.",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"added": "2026-10-06",
+			"expires": "2026-12-03",
+			"removeWhen": "harper ships a build resolving stream-json > 3.5.0, or flair stops depending on harper; re-check this entry if harper moves to a stream-json major that includes the JSONC parser."
+		},
+		{
+			"ghsa": "GHSA-86w9-cpqp-85rv",
+			"package": "node-forge",
+			"severity": "high",
+			"class": "no-patch-published",
+			"sources": ["bun"],
+			"approvedBy": "tps-flint",
+			"introducedBy": "harper -> node-forge",
+			"reason": "Renewed 2026-10-07 after re-reading against harper 5.2.8, the version flair then pinned; harper 5.3.1 resolves the same copy, re-checked when 5.3.1 was re-landed (first added 2026-10-02). No fixed release exists: npm's latest node-forge is 1.4.0, inside the affected range (<=1.4.0). Resolved copies: one in bun.lock (node-forge 1.4.0, pulled only by harper ^1.3.1) and harper 5.2.8's npm-shrinkwrap pin 1.4.0 (node_modules/harper/node_modules/node-forge in an npm install of flair); harper 5.2.8, 5.2.15, 5.3.1 and 5.3.0-beta.4 all declare ^1.3.1. flair's own code does not import it. harper 5.2.8's only import is node_modules/harper/dist/security/keys.js:64, which uses forge.pki to create and sign its CA and server certificates (generateCertificates :543-567, generateCertAuthority :589-613) and to parse and PEM-encode keys and certificates (:491, :538-539, :547, :617, :649, :689, :695, :706, :708). keys.js never calls node-forge's RSA signature verification, the path this advisory affects. As a no-patch-published entry, the gate blocks it once npm's latest node-forge is outside the affected range (when the audit can reach the registry). Expiry aligned with the other harper-pinned high entries.",
+			"added": "2026-10-07",
+			"expires": "2026-11-02",
+			"removeWhen": "npm's latest node-forge release is outside the affected range (the gate then blocks this entry): reassess; a maintainer removes the entry once harper resolves a fixed release or drops node-forge"
+		}
+	]
+}
