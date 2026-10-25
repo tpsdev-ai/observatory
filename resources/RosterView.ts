@@ -1,4 +1,4 @@
-import { Resource, databases } from "harperdb";
+import { Resource, databases } from "harper";
 
 /**
  * GET /RosterView — public-safe snapshot of the roster directory for the

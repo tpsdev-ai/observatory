@@ -23,7 +23,7 @@
  */
 
 import { createPublicKey, verify } from "node:crypto";
-import { Resource, databases } from "harperdb";
+import { Resource, databases } from "harper";
 
 const BATCH_LIMIT = 100;
 const RATE_LIMIT_MS = 10_000;
