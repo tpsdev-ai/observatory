@@ -25,9 +25,9 @@ function makeTestKeyPair(): {
 				format: "der",
 				type: "pkcs8",
 			});
-			const payload = `rockit:${ts}:${nonce}:POST:${urlPath}`;
+			const payload = `office-a:${ts}:${nonce}:POST:${urlPath}`;
 			const sig = sign(null, Buffer.from(payload), privKey).toString("base64");
-			return `TPS-Ed25519 rockit:${ts}:${nonce}:${sig}`;
+			return `TPS-Ed25519 office-a:${ts}:${nonce}:${sig}`;
 		},
 	};
 }
@@ -39,7 +39,7 @@ describe("IngestEvents auth logic", () => {
 		const kp = makeTestKeyPair();
 		const authHeader = kp.sign("/IngestEvents");
 		// Quick parse test: header has TPS-Ed25519 prefix
-		expect(authHeader.startsWith("TPS-Ed25519 rockit:")).toBe(true);
+		expect(authHeader.startsWith("TPS-Ed25519 office-a:")).toBe(true);
 		const parts = authHeader.split(":");
 		expect(parts.length).toBeGreaterThanOrEqual(4);
 	});

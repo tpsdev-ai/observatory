@@ -1,5 +1,5 @@
 type Office @table(database: "roster") @export {
-	id: ID @primaryKey # e.g. "rockit"
+	id: ID @primaryKey # e.g. "office-a"
 	name: String!
 	publicKey: String! # Ed25519 hex (32 bytes) — NOT public-safe; excluded from public reads
 	status: String @indexed # "online" | "offline" | "degraded"
